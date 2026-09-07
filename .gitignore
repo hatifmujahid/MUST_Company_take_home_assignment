@@ -16,3 +16,4 @@ state/*.jsonl
 # The data/*.csv files shipped in this repo are synthetic fixtures, not real business data.
 *.pdf
 !eval/test_cases/*.pdf
+!eval/extra_layout_samples/*.pdf
