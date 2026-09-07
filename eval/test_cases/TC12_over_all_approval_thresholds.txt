@@ -1,0 +1,14 @@
+Global Systems Partners
+Enterprise Solutions Division
+
+INVOICE
+Invoice #: GSP-1
+Invoice Date: 2026-08-21
+PO Number: PO-1011
+
+Line Items:
+1. Enterprise platform migration project, 1 unit, $150000.00 each = $150000.00
+
+Subtotal: $150000.00
+Tax: $0.00
+Total Due: $150000.00

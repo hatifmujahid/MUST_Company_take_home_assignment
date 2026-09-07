@@ -1,0 +1,169 @@
+{
+  "_notes": "Expected values are derived by hand from data/pos.csv, data/receipts.csv, data/approvers.csv, and data/chart_of_accounts.csv - not by eyeballing model output. 'deterministic_reason_codes' are the exception reason codes that MUST appear regardless of model confidence (they come from rule-based matching/routing, not from Claude's self-reported confidence). Confidence-driven reason codes (LOW_CONFIDENCE_EXTRACTION, LOW_CONFIDENCE_CODING) are intentionally excluded from hard pass/fail and are scored separately by the confidence-calibration step in run_eval.py, since they depend on live model behavior, not a hand-computable ground truth.",
+  "cases": [
+    {
+      "id": "TC01_clean_matched_simple",
+      "file": "TC01_clean_matched_simple.txt",
+      "expected": {
+        "vendor_name": "Bright Cleaning Co",
+        "invoice_number": "BC-2201",
+        "po_number": "PO-1002",
+        "total": 300.00,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6200",
+        "deterministic_reason_codes": []
+      },
+      "rationale": "PO-1002 = $300.00 exactly, receipt PO-1002 = $300.00 exactly -> variance 0, well within $5/2% tolerance both steps -> MATCHED. 'Weekly office cleaning service' maps directly to 6200 Cleaning & Janitorial in the chart of accounts."
+    },
+    {
+      "id": "TC02_clean_multiline_coding",
+      "file": "TC02_clean_multiline_coding.pdf",
+      "expected": {
+        "vendor_name": "Peak Hardware",
+        "invoice_number": "PH-5510",
+        "po_number": "PO-1007",
+        "total": 615.25,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6700",
+        "deterministic_reason_codes": []
+      },
+      "rationale": "PO-1007 = $615.25 exactly, receipt PO-1007 = $615.25 exactly -> MATCHED. All three line items (hammer set, drill, gloves) are physical tools/equipment -> 6700 Equipment & Hardware. Exercises the real PDF ingestion path (pdfplumber), not just .txt."
+    },
+    {
+      "id": "TC03_partial_quantity_mismatch",
+      "file": "TC03_partial_quantity_mismatch.txt",
+      "expected": {
+        "vendor_name": "Summit Logistics",
+        "invoice_number": "SL-3390",
+        "po_number": "PO-1004",
+        "total": 875.50,
+        "match_status": "PARTIAL",
+        "gl_code_primary": "6400",
+        "deterministic_reason_codes": ["PARTIAL"]
+      },
+      "rationale": "Invoice ($875.50) matches PO-1004 ($875.50) exactly, but the receipt on file for PO-1004 is only $700.00 - variance $175.50 exceeds the tolerance of max($5, 2% of $875.50=$17.51) -> PARTIAL (looks like a partial delivery). 'Freight delivery service' -> 6400 Shipping & Freight."
+    },
+    {
+      "id": "TC04_missing_po",
+      "file": "TC04_missing_po.txt",
+      "expected": {
+        "vendor_name": "Quick Print Co",
+        "invoice_number": "QP-771",
+        "po_number": null,
+        "total": 120.00,
+        "match_status": "NO_PO_FOUND",
+        "gl_code_primary": "6900",
+        "deterministic_reason_codes": ["NO_PO_FOUND"]
+      },
+      "rationale": "No PO number appears anywhere on the invoice text, and Quick Print Co has no POs on file at all -> NO_PO_FOUND. 'Business card printing' doesn't cleanly fit any specific account; 6900 Miscellaneous Expense or 6100 Office Supplies are both defensible - graded as correct if either is chosen, since this ambiguity is realistic, not a bug."
+    },
+    {
+      "id": "TC05_new_vendor_bad_po_reference",
+      "file": "TC05_new_vendor_bad_po_reference.txt",
+      "expected": {
+        "vendor_name": "Fresh Start Consulting",
+        "invoice_number": "FSC-101",
+        "po_number": "PO-9999",
+        "total": 600.00,
+        "match_status": "NO_PO_FOUND",
+        "gl_code_primary": "6800",
+        "deterministic_reason_codes": ["NO_PO_FOUND"]
+      },
+      "rationale": "PO-9999 does not exist in pos.csv and is not a close-enough fuzzy match (normalized edit distance to any real PO number is well below the 0.8 cutoff) to any real PO -> NO_PO_FOUND, distinct from TC04 in that a PO number IS present but wrong, not absent. 'Strategy consulting session' -> 6800 Professional Services."
+    },
+    {
+      "id": "TC06_messy_layout_rounding_tolerance",
+      "file": "TC06_messy_layout_rounding_tolerance.txt",
+      "expected": {
+        "vendor_name": "Acme Office Supplies",
+        "invoice_number": "AOS-99182",
+        "po_number": "PO-1009",
+        "total": 211.50,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6100",
+        "deterministic_reason_codes": []
+      },
+      "rationale": "Deliberately messy/abbreviated layout (no clear labels, shorthand, ASCII divider) to probe extraction robustness - this is the predicted 'extraction misread on messy layout' failure category. PO-1009 = $210.00, invoice total $211.50 includes a $1.50 rounding fee, variance $1.50 is within the $5.00 tolerance -> MATCHED. Receipt for PO-1009 = $210.00 exactly, also within tolerance. 'Legal pads' + 'label maker' -> 6100 Office Supplies. If extraction confidence comes back low on this one, that is expected and informative, not a bug - it's exactly what this case is designed to surface."
+    },
+    {
+      "id": "TC07_duplicate_resubmission",
+      "file": "TC07_duplicate_resubmission.txt",
+      "expected": {
+        "vendor_name": "Bright Cleaning Co",
+        "invoice_number": "BC-2201",
+        "po_number": "PO-1002",
+        "total": 300.00,
+        "match_status": "DUPLICATE",
+        "gl_code_primary": "6200",
+        "deterministic_reason_codes": ["DUPLICATE"]
+      },
+      "rationale": "Byte-for-byte same invoice content as TC01, submitted under a different filename. Processed after TC01 in the same alphabetically-sorted batch, so the ledger already has TC01's (vendor, invoice_number) pair recorded by the time this one runs -> DUPLICATE, regardless of what the match status would otherwise have been."
+    },
+    {
+      "id": "TC08_corrupted_unreadable",
+      "file": "TC08_corrupted_unreadable.pdf",
+      "expected": {
+        "overall_status": "FAILED"
+      },
+      "rationale": "File is deliberately not a valid PDF (garbage bytes with a .pdf extension) so pdfplumber cannot open it. Must land as a FAILED result with a specific ingest error message, and must not crash the batch or block the other 11 invoices from processing."
+    },
+    {
+      "id": "TC09_po_typo_fuzzy_match",
+      "file": "TC09_po_typo_fuzzy_match.txt",
+      "expected": {
+        "vendor_name": "Northwind Software LLC",
+        "invoice_number": "NW-6602",
+        "po_number": "PO-10O3",
+        "total": 1200.00,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6300",
+        "deterministic_reason_codes": []
+      },
+      "rationale": "PO number on the invoice is 'PO-10O3' (letter O in place of one zero) - a single-character typo. Normalized fuzzy match against PO-1003 scores 0.833 similarity, above the 0.8 cutoff, and PO-1003 is the closest candidate among all POs on file -> resolves to PO-1003 ($1200.00), which matches the invoice and receipt exactly -> MATCHED. 'Annual SaaS license renewal' -> 6300 Software & Subscriptions."
+    },
+    {
+      "id": "TC10_escalated_approver_routing",
+      "file": "TC10_escalated_approver_routing.txt",
+      "expected": {
+        "vendor_name": "Stellar Consulting",
+        "invoice_number": "STC-410",
+        "po_number": "PO-1008",
+        "total": 3000.00,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6800",
+        "approver_name": "Alex Rivera (Owner)",
+        "deterministic_reason_codes": []
+      },
+      "rationale": "PO-1008 and its receipt are both exactly $3000.00 -> MATCHED, no match exception. $3000 exceeds Jamie Patel's $500 limit and Morgan Lee's $2000 limit, so routing must escalate to Alex Rivera (Owner) - this is normal routing behavior, not an exception, and is the primary thing this case is testing. 'Strategic advisory retainer' -> 6800 Professional Services."
+    },
+    {
+      "id": "TC11_amount_mismatch_over_tolerance",
+      "file": "TC11_amount_mismatch_over_tolerance.txt",
+      "expected": {
+        "vendor_name": "Vertex Marketing Group",
+        "invoice_number": "VMG-220",
+        "po_number": "PO-1005",
+        "total": 2650.00,
+        "match_status": "OVER_TOLERANCE",
+        "gl_code_primary": "6500",
+        "deterministic_reason_codes": ["OVER_TOLERANCE"]
+      },
+      "rationale": "PO-1005 is $2400.00; invoice total is $2650.00, a $250.00 variance against a tolerance of max($5, 2% of $2400=$48) -> well OVER_TOLERANCE. 'Digital ad campaign management' -> 6500 Marketing & Advertising."
+    },
+    {
+      "id": "TC12_over_all_approval_thresholds",
+      "file": "TC12_over_all_approval_thresholds.txt",
+      "expected": {
+        "vendor_name": "Global Systems Partners",
+        "invoice_number": "GSP-1",
+        "po_number": "PO-1011",
+        "total": 150000.00,
+        "match_status": "MATCHED",
+        "gl_code_primary": "6800",
+        "approver_name": "Alex Rivera (Owner)",
+        "deterministic_reason_codes": ["OVER_APPROVAL_THRESHOLD"]
+      },
+      "rationale": "PO-1011 and its receipt are both exactly $150,000.00 -> MATCHED, no match exception. But $150,000 exceeds even Alex Rivera's $100,000 top approval limit -> OVER_APPROVAL_THRESHOLD, routed to Alex anyway as the closest available approver with an explicit note that this needs manual sign-off above the normal chain. This is a deliberately extreme fixture (not representative of typical <50 invoices/month volume) whose only purpose is exercising the 'no approver covers this amount' code path. 'Enterprise platform migration project' plausibly maps to 6800 Professional Services or 6300 Software & Subscriptions - either is graded as correct."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+config.yaml
+
+inbox/*
+!inbox/.gitkeep
+processed/*
+!processed/.gitkeep
+output/*
+!output/.gitkeep
+state/*.jsonl
+
+# Real invoice files or real business reference data should never be committed.
+# The data/*.csv files shipped in this repo are synthetic fixtures, not real business data.
+*.pdf
+!eval/test_cases/*.pdf

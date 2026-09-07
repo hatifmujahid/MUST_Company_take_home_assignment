@@ -1,0 +1,13 @@
+ACME OFFICE SUPPLIES // billing dept
+ref PO-1009  |  inv# AOS-99182  |  8/19/26
+
+qty  item                         amt
+20   legal pads                   $84.00
+1    label maker + tape 3pk       $126.00
+
+sub $210.00
+rnd fee $1.50
+====================
+DUE >>> $211.50  (net 30)
+
+thx for your business

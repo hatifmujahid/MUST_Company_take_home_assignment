@@ -1,0 +1,14 @@
+Fresh Start Consulting
+2 Advisory Plaza, Springfield
+
+INVOICE
+Invoice #: FSC-101
+Invoice Date: 2026-08-12
+PO Number: PO-9999
+
+Line Items:
+1. Strategy consulting session, 4 hours, $150.00 each = $600.00
+
+Subtotal: $600.00
+Tax: $0.00
+Total Due: $600.00

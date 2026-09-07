@@ -1,0 +1,13 @@
+Quick Print Co
+14 Market Street, Springfield
+
+INVOICE
+Invoice #: QP-771
+Invoice Date: 2026-08-11
+
+Line Items:
+1. Business card printing, 1000 units, $0.12 each = $120.00
+
+Subtotal: $120.00
+Tax: $0.00
+Total Due: $120.00

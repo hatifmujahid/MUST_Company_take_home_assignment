@@ -1,0 +1,14 @@
+Northwind Software LLC
+Cloud Suite Division
+
+INVOICE
+Invoice #: NW-6602
+Invoice Date: 2026-08-06
+PO Number: PO-10O3
+
+Line Items:
+1. Annual SaaS license renewal, 1 unit, $1200.00 each = $1200.00
+
+Subtotal: $1200.00
+Tax: $0.00
+Total Due: $1200.00

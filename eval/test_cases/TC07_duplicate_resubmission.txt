@@ -1,0 +1,14 @@
+Bright Cleaning Co
+88 Service Road, Springfield
+
+INVOICE
+Invoice #: BC-2201
+Invoice Date: 2026-08-06
+PO Number: PO-1002
+
+Line Items:
+1. Weekly office cleaning service, 1 unit, $300.00 each = $300.00
+
+Subtotal: $300.00
+Tax: $0.00
+Total Due: $300.00

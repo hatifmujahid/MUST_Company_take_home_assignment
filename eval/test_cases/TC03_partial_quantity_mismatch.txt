@@ -1,0 +1,14 @@
+Summit Logistics
+900 Freight Ave, Springfield
+
+INVOICE
+Invoice #: SL-3390
+Invoice Date: 2026-08-07
+PO Number: PO-1004
+
+Line Items:
+1. Freight delivery service, 1 unit, $875.50 each = $875.50
+
+Subtotal: $875.50
+Tax: $0.00
+Total Due: $875.50
