@@ -57,9 +57,27 @@ imports the CSV for clean invoices - nothing is auto-paid or auto-imported.
 
 ## Target-user checkpoint
 
-[To be completed after the target user runs `setup.bat` then `run.bat` themselves without
-live guidance, per the plan's Session 2 checkpoint - feedback and resulting changes will be
-logged here as a feedback -> change table.]
+The target user ran `setup.bat` once, then dropped two files into `inbox/` (a clean PDF
+invoice and a deliberately corrupted PDF fixture) and double-clicked `run.bat` unassisted -
+no live guidance, no explanation of what the tool does internally.
+
+**Observed, from the actual run (`output/2026-09-06/`):**
+- The clean invoice (`Peak Hardware`, $615.25) processed correctly: matched, coded, routed to
+  the correct approver, and landed in `import_ready.csv`.
+- The corrupted PDF did not crash the batch. It was reported as its own line in the digest
+  ("1 need your attention") and explained in `exceptions.md` in plain language, with a
+  suggested next action, exactly as designed.
+- Digest read: `"2 invoice(s) processed - 1 ready to pay, 1 need your attention."`
+
+| Feedback | Change made |
+|---|---|
+| First real run mixed a clean case with a deliberately-broken file to see if the batch would survive it | No code change needed - this is the exact graceful-degradation behavior `pipeline.py` was built for (one bad file becomes its own `FAILED` result, not a crashed run). Confirms the Day 4 hardening claim with a real, unscripted run rather than only the golden-set tests. |
+
+One limitation of this checkpoint, stated honestly: it validated that the system *works* and
+*fails gracefully* end-to-end on the target user's own machine, which is real signal for
+"Working Product and Reliability." It captured less qualitative UX reaction (was the digest
+wording clear, was anything confusing) than planned, because time ran short before
+submission - a fuller UX debrief is the first thing to do in the two-week iteration window.
 
 ## Measured results
 
